@@ -1,13 +1,17 @@
 # Glow & Grace — Salon Management System
 
+**Student:** Harsh Kumar  
+**Roll No.:** 150096725105  
+**Assignment:** 4 — Salon Management API
+
 Full-stack salon management app — React frontend consuming an Express + Supabase REST API with JWT auth.
 
-**Live:** https://glow-and-grace-salon.vercel.app
+**Live:** Local development build
 
 ## Project structure
 
 ```
-Salon-Management-API/
+Harsh_Kumar_150096725105/
 ├── Backend/    Express REST API (JWT auth + Supabase)
 └── Frontend/   React 19 + Vite SPA (Tailwind, React Router v6)
 ```

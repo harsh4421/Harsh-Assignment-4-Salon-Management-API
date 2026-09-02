@@ -38,128 +38,63 @@ export default function Services() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let result = services;
+    const result = q
+      ? services.filter(s => s.name?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q))
+      : services;
 
-    if (q) {
-      result = result.filter(
-        (s) =>
-          s.name?.toLowerCase().includes(q) ||
-          s.description?.toLowerCase().includes(q)
-      );
-    }
-
-    const sorted = [...result];
-    switch (sort) {
-      case "price-asc":
-        sorted.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        sorted.sort((a, b) => b.price - a.price);
-        break;
-      case "duration-asc":
-        sorted.sort((a, b) => (a.duration_minutes ?? Infinity) - (b.duration_minutes ?? Infinity));
-        break;
-      default:
-        sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
-    return sorted;
+    return [...result].sort((a, b) => {
+      if (sort === "price-asc") return a.price - b.price;
+      if (sort === "price-desc") return b.price - a.price;
+      if (sort === "duration-asc") return (a.duration_minutes ?? Infinity) - (b.duration_minutes ?? Infinity);
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
   }, [services, query, sort]);
 
   return (
-    <section ref={rootRef} className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-      <div className="flex flex-wrap items-end justify-between gap-4" data-reveal>
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            Our services
-          </h1>
-          <p className="mt-2 text-sm text-stone-500">
-            {loading
-              ? "Loading the menu…"
-              : `${services.length} treatment${services.length === 1 ? "" : "s"} on the menu`}
-          </p>
+    <section ref={rootRef} className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
+      <div className="border-b border-stone-200 pb-8" data-reveal>
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <p className="eyebrow">Atelier catalogue</p>
+            <h1 className="mt-3 font-display text-4xl text-stone-900 sm:text-5xl">Services & treatments</h1>
+            <p className="mt-3 text-sm text-stone-500">
+              {loading ? "Loading catalogue…" : `${services.length} service${services.length === 1 ? "" : "s"} available`}
+            </p>
+          </div>
+          {isAuthenticated && <Link to="/services/new" className="btn-primary">+ Add service</Link>}
         </div>
-
-        {isAuthenticated && (
-          <Link to="/services/new" className="btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add service
-          </Link>
-        )}
       </div>
 
-      {/* Toolbar */}
-      <div className="card mt-8 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or description…"
-            aria-label="Search services"
-            className="input !pl-11"
-          />
-        </div>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          aria-label="Sort services"
-          className="input sm:w-52"
-        >
-          {SORTS.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
+      <div className="mt-7 grid gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-card sm:grid-cols-[1fr_auto]" data-reveal>
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search services…"
+          aria-label="Search services"
+          className="input"
+        />
+        <select value={sort} onChange={e => setSort(e.target.value)} className="input sm:w-56" aria-label="Sort services">
+          {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
       </div>
 
-      {/* Results */}
       <div className="mt-8">
-        {loading ? (
-          <CardSkeletonGrid count={6} />
-        ) : visible.length === 0 ? (
+        {loading ? <CardSkeletonGrid count={6} /> : visible.length === 0 ? (
           <EmptyState
-            icon="✂"
+            icon="✦"
             title={query ? "No matches found" : "No services yet"}
-            message={
-              query
-                ? `Nothing matches "${query}". Try a different search.`
-                : isAuthenticated
-                  ? "Your menu is empty — add your first treatment to get started."
-                  : "The menu is empty right now. Please check back soon."
-            }
-            action={
-              query ? (
-                <button type="button" className="btn-secondary" onClick={() => setQuery("")}>
-                  Clear search
-                </button>
-              ) : isAuthenticated ? (
-                <Link to="/services/new" className="btn-primary">
-                  Add your first service
-                </Link>
-              ) : null
-            }
+            message={query ? `Nothing matches "${query}".` : isAuthenticated ? "Add your first treatment to begin." : "The catalogue is empty right now."}
+            action={query ? <button className="btn-secondary" onClick={() => setQuery("")}>Clear search</button> : isAuthenticated ? <Link to="/services/new" className="btn-primary">Add service</Link> : null}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((service, i) => (
-              <div key={service.id} data-reveal>
-                <ServiceCard service={service} index={i} />
-              </div>
-            ))}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((service, i) => <div key={service.id} data-reveal><ServiceCard service={service} index={i} /></div>)}
           </div>
         )}
       </div>
